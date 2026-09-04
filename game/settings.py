@@ -1,12 +1,18 @@
 """All tunable constants live here so you're not hunting through files."""
-
+ 
 TITLE = "My Turn-Based Game"
 FPS = 60
-
+ 
+# --- Fixed window resolution — always 1280x1024, regardless of player count ---
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 1024
+ 
 # --- Players ---
 # Everyone plays by the same rules — there's no "enemy," just N players
-# taking turns, each marking their own board.
-MAX_PLAYERS = 4  # supports 2-4 with the layout math below
+# taking turns, each marking their own board. The actual player count
+# is chosen on the menu screen (2 to MAX_PLAYERS) and passed into
+# PlayState at runtime.
+MAX_PLAYERS = 4
 DEFAULT_NUM_PLAYERS = 2
 PLAYER_COLORS = [
     (70, 130, 220),   # blue
@@ -14,41 +20,97 @@ PLAYER_COLORS = [
     (60, 200, 100),   # green
     (230, 180, 40),   # yellow
 ]
-
-# --- Each player's personal board ---
-BOARD_COLS = 3
-BOARD_ROWS = 3
+ 
+# --- Fixed palette for the 5x5 color grid (right-hand side of the board) ---
+GRID_BLUE = (60, 110, 210)
+GRID_YELLOW = (235, 205, 60)
+GRID_RED = (200, 60, 60)
+GRID_BLACK = (25, 25, 28)
+GRID_WHITE = (235, 235, 235)
+COLOR_GRID_PALETTE = [GRID_BLUE, GRID_YELLOW, GRID_RED, GRID_BLACK, GRID_WHITE]
+ 
+ 
+def color_grid_color(row, col):
+    """
+    The 5x5 grid's fixed color: index = (col - row) % 5 maps into
+    COLOR_GRID_PALETTE. This produces 5 diagonal bands of 5 cells each
+    (blue starting top-left, then yellow/red/black/white each starting
+    one cell further right and wrapping into the bottom-left corner).
+    """
+    return COLOR_GRID_PALETTE[(col - row) % len(COLOR_GRID_PALETTE)]
+ 
+ 
+# --- Each player's board layout ---
 CELL_SIZE = 50
-LABEL_HEIGHT = 28  # space above each board for the player's name
-
-BOARD_PIXEL_WIDTH = BOARD_COLS * CELL_SIZE
-BOARD_PIXEL_HEIGHT = BOARD_ROWS * CELL_SIZE
-BOARD_AREA_WIDTH = BOARD_PIXEL_WIDTH
-BOARD_AREA_HEIGHT = LABEL_HEIGHT + BOARD_PIXEL_HEIGHT
-
-# --- Layout of the boards on screen ---
+ 
+PYRAMID_ROWS = 5           # left-hand grid: row i (1-indexed) has i cells
+COLOR_GRID_SIZE = 5        # right-hand grid: 5x5
+ 
+# Bottom row: 7 labeled cells, left to right.
+BOTTOM_ROW_LABELS = ["-1", "-1", "-2", "-2", "-2", "-3", "-3"]
+ 
+LABEL_HEIGHT = 30          # space above the grids for the player's name
+SUBGRID_GAP = 20           # horizontal gap between the pyramid and the color grid
+ROW_GAP = 15               # vertical gap between the grids and the bottom row
+ 
+PYRAMID_WIDTH = PYRAMID_ROWS * CELL_SIZE
+COLOR_GRID_WIDTH = COLOR_GRID_SIZE * CELL_SIZE
+GRIDS_HEIGHT = max(PYRAMID_ROWS, COLOR_GRID_SIZE) * CELL_SIZE
+BOTTOM_ROW_WIDTH = len(BOTTOM_ROW_LABELS) * CELL_SIZE
+BOTTOM_ROW_HEIGHT = CELL_SIZE
+ 
+BOARD_AREA_WIDTH = PYRAMID_WIDTH + SUBGRID_GAP + COLOR_GRID_WIDTH
+BOARD_AREA_HEIGHT = LABEL_HEIGHT + GRIDS_HEIGHT + ROW_GAP + BOTTOM_ROW_HEIGHT
+ 
+# --- Layout of player boards on screen (always sized for MAX_PLAYERS) ---
 BOARDS_PER_ROW = 2
-BOARD_GAP = 30
-MARGIN = 20
-HUD_HEIGHT = 50
-BUTTON_AREA_HEIGHT = 70
-
+BOARD_GAP = 50
+MARGIN = 30
+HUD_HEIGHT = 60
+BUTTON_AREA_HEIGHT = 80
+ 
 _board_cols_used = min(MAX_PLAYERS, BOARDS_PER_ROW)
 _board_rows_used = (MAX_PLAYERS + BOARDS_PER_ROW - 1) // BOARDS_PER_ROW
-
-SCREEN_WIDTH = (
-    MARGIN * 2
-    + _board_cols_used * BOARD_AREA_WIDTH
-    + (_board_cols_used - 1) * BOARD_GAP
+ 
+_boards_block_width = (
+    _board_cols_used * BOARD_AREA_WIDTH + (_board_cols_used - 1) * BOARD_GAP
 )
-SCREEN_HEIGHT = (
-    HUD_HEIGHT
-    + MARGIN * 2
-    + _board_rows_used * BOARD_AREA_HEIGHT
-    + (_board_rows_used - 1) * BOARD_GAP
-    + BUTTON_AREA_HEIGHT
+_boards_block_height = (
+    _board_rows_used * BOARD_AREA_HEIGHT + (_board_rows_used - 1) * BOARD_GAP
 )
-
+ 
+# Center the block of boards within the fixed 1280x1024 window.
+BOARD_ORIGIN_X = (SCREEN_WIDTH - _boards_block_width) // 2
+_available_height_for_boards = SCREEN_HEIGHT - HUD_HEIGHT - BUTTON_AREA_HEIGHT
+BOARD_ORIGIN_Y = HUD_HEIGHT + max(0, (_available_height_for_boards - _boards_block_height) // 2)
+ 
+# --- Factories (the shared drafting pool, shown on its own screen) ---
+FACTORY_TILE_COUNT = 4
+FACTORY_RING_RADIUS = 320   # distance from screen center to each disc's center
+FACTORY_DISC_RADIUS = 70
+FACTORY_TILE_SIZE = CELL_SIZE  # reuse the same cell size as the boards
+ 
+FACTORY_SELECT_HIGHLIGHT = (140, 190, 250)  # light blue — selected disc/tile indicator
+ 
+# When a factory is picked, the ring shifts right to make room for the
+# enlarged factory in the top-left.
+FACTORY_RING_SHIFT_X = 150
+ 
+FACTORY_ENLARGED_RADIUS = 130
+FACTORY_ENLARGED_TILE_SIZE = 90
+FACTORY_ENLARGED_CENTER = (240, 260)  # fixed point in the upper-left area
+ 
+CENTER_GROUP_GAP = 16          # gap between different-color groups in the center pool
+CENTER_TILES_PER_ROW = 3       # tiles per row within one color's group in the center pool
+ 
+ 
+def num_factories_for(num_players):
+    """
+    5 factories for 2 players, 7 for 3, 9 for 4 — each player above 2
+    adds 2 factories.
+    """
+    return 9 - ((4 - num_players) * 2)
+ 
 # Colors (R, G, B)
 BLACK = (10, 10, 12)
 WHITE = (240, 240, 240)
@@ -56,3 +118,4 @@ GRAY = (90, 90, 95)
 DARK_GRAY = (35, 35, 40)
 BUTTON_COLOR = (70, 130, 220)
 BUTTON_HOVER_COLOR = (0, 255, 0)
+BUTTON_DISABLED_COLOR = (55, 55, 60)
