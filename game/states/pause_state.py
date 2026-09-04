@@ -6,16 +6,18 @@ from game.states.base_state import BaseState
 
 class PauseState(BaseState):
     """
-    Overlays a pause menu on a frozen PlayState. Holds a reference to
-    that exact PlayState instance, so "Resume" hands control straight
-    back to it with all game state (players, marks, turn count) intact
-    — pausing never recreates or resets the game. While paused, input
-    only affects this menu; the underlying game receives no events.
+    Overlays a pause menu on a frozen background screen. Holds a
+    reference to that exact screen's state object (whichever one was
+    active — PlayState or FactoryState — both implement draw()), so
+    "Resume" hands control straight back to the same screen with all
+    game state intact — pausing never recreates or resets anything.
+    While paused, input only affects this menu; the underlying screen
+    receives no events.
     """
 
-    def __init__(self, app, play_state):
+    def __init__(self, app, background_state):
         super().__init__(app)
-        self.play_state = play_state
+        self.background_state = background_state
 
         self.title_font = pygame.font.SysFont(None, 48)
         self.option_font = pygame.font.SysFont(None, 30)
@@ -60,7 +62,7 @@ class PauseState(BaseState):
         return None
 
     def _resume(self):
-        self.app.change_state(self.play_state)
+        self.app.change_state(self.background_state)
 
     def _exit_to_menu(self):
         from game.states.menu_state import MenuState
@@ -70,8 +72,8 @@ class PauseState(BaseState):
         pass
 
     def draw(self, screen):
-        # Draw the frozen game underneath, dim it, then draw the menu on top.
-        self.play_state.draw(screen)
+        # Draw the frozen screen underneath, dim it, then draw the menu on top.
+        self.background_state.draw(screen)
 
         overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         overlay.set_alpha(180)

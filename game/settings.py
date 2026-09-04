@@ -84,6 +84,33 @@ BOARD_ORIGIN_X = (SCREEN_WIDTH - _boards_block_width) // 2
 _available_height_for_boards = SCREEN_HEIGHT - HUD_HEIGHT - BUTTON_AREA_HEIGHT
 BOARD_ORIGIN_Y = HUD_HEIGHT + max(0, (_available_height_for_boards - _boards_block_height) // 2)
  
+# --- Factories (the shared drafting pool, shown on its own screen) ---
+FACTORY_TILE_COUNT = 4
+FACTORY_RING_RADIUS = 320   # distance from screen center to each disc's center
+FACTORY_DISC_RADIUS = 70
+FACTORY_TILE_SIZE = CELL_SIZE  # reuse the same cell size as the boards
+ 
+FACTORY_SELECT_HIGHLIGHT = (140, 190, 250)  # light blue — selected disc/tile indicator
+ 
+# When a factory is picked, the ring shifts right to make room for the
+# enlarged factory in the top-left.
+FACTORY_RING_SHIFT_X = 150
+ 
+FACTORY_ENLARGED_RADIUS = 130
+FACTORY_ENLARGED_TILE_SIZE = 90
+FACTORY_ENLARGED_CENTER = (240, 260)  # fixed point in the upper-left area
+ 
+CENTER_GROUP_GAP = 16          # gap between different-color groups in the center pool
+CENTER_TILES_PER_ROW = 3       # tiles per row within one color's group in the center pool
+ 
+ 
+def num_factories_for(num_players):
+    """
+    5 factories for 2 players, 7 for 3, 9 for 4 — each player above 2
+    adds 2 factories.
+    """
+    return 9 - ((4 - num_players) * 2)
+ 
 # Colors (R, G, B)
 BLACK = (10, 10, 12)
 WHITE = (240, 240, 240)
